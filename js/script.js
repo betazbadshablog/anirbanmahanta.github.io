@@ -7,61 +7,81 @@
   document.documentElement.classList.add("js-ready");
 
   /* ============ ANIMATED BACKGROUND (particle network) ============ */
-  try {
-    const canvas = document.getElementById("bgCanvas");
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let width, height, nodes = [];
+let mouseX = -1000, mouseY = -1000;
 
-    if (canvas && !prefersReducedMotion) {
-      const ctx = canvas.getContext("2d");
-      let width, height, particles, rafId;
-      let running = true;
+function resize() {
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+  initNodes();
+}
 
-      const getThemeColors = () => {
-        const styles = getComputedStyle(document.documentElement);
-        return {
-          a: styles.getPropertyValue("--accent").trim() || "#E8A94A",
-          b: styles.getPropertyValue("--accent-2").trim() || "#45D9C0"
-        };
-      };
+function initNodes() {
+  const count = Math.floor((width * height) / 9000);
+  nodes = Array.from({ length: count }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    radius: Math.random() * 1.5 + 1
+  }));
+}
 
-      const hexToRgb = (hex) => {
-        const h = hex.replace("#", "");
-        const bigint = parseInt(h.length === 3
-          ? h.split("").map(c => c + c).join("")
-          : h, 16);
-        return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-      };
+function animate() {
+  ctx.clearRect(0, 0, width, height);
 
-      function resize() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
+  for (const n of nodes) {
+    n.x += n.vx;
+    n.y += n.vy;
+    if (n.x < 0 || n.x > width) n.vx *= -1;
+    if (n.y < 0 || n.y > height) n.vy *= -1;
+
+    const dx = n.x - mouseX, dy = n.y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 100) {
+      n.x += dx / dist * 0.6;
+      n.y += dy / dist * 0.6;
+    }
+  }
+
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 130) {
+        ctx.globalAlpha = (1 - dist / 130) * 0.4;
+        ctx.strokeStyle = '#5dcaa5';
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.stroke();
       }
+    }
+  }
 
-      function initParticles() {
-        const density = Math.min(70, Math.floor((width * height) / 18000));
-        particles = Array.from({ length: density }, () => ({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: (Math.random() - 0.5) * 0.35,
-          r: Math.random() * 1.6 + 0.6
-        }));
-      }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#9fe1cb';
+  for (const n of nodes) {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-      function step() {
-        if (!running) return;
-        const { a, b } = getThemeColors();
-        const [ar, ag, ab] = hexToRgb(a);
-        const [br, bg, bb] = hexToRgb(b);
+  requestAnimationFrame(animate);
+}
 
-        ctx.clearRect(0, 0, width, height);
-
-        particles.forEach(p => {
-          p.x += p.vx;
-          p.y += p.vy;
-          if (p.x < 0 || p.x > width) p.vx *= -1;
-          if (p.y < 0 || p.y > height) p.vy *= -1;
-        });
+window.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+window.addEventListener('mouseleave', () => { mouseX = -1000; mouseY = -1000; });
+window.addEventListener('resize', resize);
+resize();
+animate();
 
         // connecting lines between nearby particles
         for (let i = 0; i < particles.length; i++) {

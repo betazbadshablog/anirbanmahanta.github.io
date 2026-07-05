@@ -47,22 +47,15 @@ body{
   transition:background .35s ease, color .35s ease;
   position:relative;
 }
-#bgCanvas{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:0;
-  pointer-events:none;
-  opacity:.55;
+#particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: #06080f; /* match this to your existing dark bg color */
 }
-html[data-theme="light"] #bgCanvas{ opacity:.35; }
-.site-header, main, .site-footer{ position:relative; z-index:1; }
-img{ max-width:100%; display:block; }
-a{ color:inherit; text-decoration:none; }
-ul,ol{ list-style:none; margin:0; padding:0; }
-.mono{ font-family:var(--font-mono); }
-
 .container{
   width:100%;
   max-width:1160px;
